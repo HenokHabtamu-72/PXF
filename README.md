@@ -5,7 +5,7 @@
 [![JUCE 8](https://img.shields.io/badge/JUCE-8.0.4-3D5AFE.svg)](https://juce.com)
 [![VST3 · AU · Standalone](https://img.shields.io/badge/VST3%20%C2%B7%20AU%20%C2%B7%20Standalone-B04CF7.svg)](docs/BUILD.md)
 
-**A late-night software instrument.** Two engines share one master FX chain inside a
+**A digital software instrument.** Two engines share one master FX chain inside a
 neon-purple, dark-navy interface:
 
 - **SYNTH** — a warm 2-oscillator + sub subtractive synth playing 20 built-in presets,
