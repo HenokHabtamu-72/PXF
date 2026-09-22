@@ -185,6 +185,6 @@ Delete `build/` and reconfigure from scratch. A half-finished JUCE fetch can lea
 generated VST3 manifest stale.
 
 **Licensing note.**
-JUCE is dual-licensed (AGPLv3 / commercial). This build shows the JUCE splash screen by
-default. Only set `JUCE_DISPLAY_SPLASH_SCREEN=0` in `CMakeLists.txt` if your JUCE licence
-permits it.
+JUCE is dual-licensed (AGPLv3 / commercial). PXF is distributed under AGPLv3 because a work
+linking AGPLv3 JUCE has to be — see [LICENSE](../LICENSE). A commercial JUCE licence lets you
+relicense your own fork.

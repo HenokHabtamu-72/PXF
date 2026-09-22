@@ -201,7 +201,6 @@ Copyright © 2026 Henok Habtamu.
 PXF is released under the **GNU Affero General Public License v3.0** — see [LICENSE](LICENSE).
 
 PXF links [JUCE](https://juce.com), which is dual-licensed under AGPLv3 and a commercial
-licence. AGPLv3 is the licence that keeps this build legal without a JUCE subscription, and
-it is why the JUCE splash screen is left on in `CMakeLists.txt`. If you hold a paid JUCE
-licence you may set `JUCE_DISPLAY_SPLASH_SCREEN=0` there and relicense your own fork
-accordingly.
+licence. AGPLv3 is what keeps this build legal without a JUCE subscription, and it is why
+PXF itself is AGPLv3: a combined work has to be. If you hold a commercial JUCE licence you
+may relicense your own fork accordingly.

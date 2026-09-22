@@ -88,8 +88,7 @@ target_compile_definitions(PXF PUBLIC
     JUCE_USE_CURL=0
     JUCE_USE_MP3AUDIOFORMAT=1          # lets GRAIN load .mp3 one-shots
     JUCE_VST3_CAN_REPLACE_VST2=0
-    JUCE_STRICT_REFCOUNTEDPOINTER=1
-    JUCE_DISPLAY_SPLASH_SCREEN=1)      # see LICENSE: JUCE is AGPLv3 / commercial
+    JUCE_STRICT_REFCOUNTEDPOINTER=1)
 
 target_link_libraries(PXF
     PRIVATE
