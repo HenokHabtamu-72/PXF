@@ -126,7 +126,7 @@ vinyl hiss and sparse crackle, and eases the top end off. At zero it is transpar
 
 ---
 
-## UI — "Late Night Chill"
+## UI
 
 Near-black navy vertical gradient `#0A0E27 → #131A3D` under a subtle film-grain overlay.
 Neon purple `#B04CF7 / #8B5CF6` accents with soft outer glow; GRAIN elements glow deep blue
