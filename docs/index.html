@@ -1,0 +1,561 @@
+<title>PXF Demo Tracks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+  :root{
+    /* PXF "Late Night Chill" panel palette — from the plugin's own UI spec */
+    --navy-top:#0A0E27;
+    --navy-bot:#131A3D;
+    --panel:#0E1330;
+    --panel-hi:#161C41;
+    --edge:rgba(176,76,247,.16);
+    --edge-soft:rgba(201,196,232,.10);
+    --violet:#B04CF7;
+    --violet-dim:#8B5CF6;
+    --blue:#3D5AFE;
+    --text:#C9C4E8;
+    --text-hi:#E9E5FF;
+    --muted:#6E6A8F;
+    --accent:var(--violet);
+
+    --f-display:"Chakra Petch",system-ui,sans-serif;
+    --f-body:"IBM Plex Sans",system-ui,sans-serif;
+    --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+
+  html{height:100%}
+  body{
+    min-height:100%;
+    margin:0;
+    background:linear-gradient(175deg,var(--navy-top) 0%,var(--navy-bot) 100%);
+    background-attachment:fixed;
+    color:var(--text);
+    font-family:var(--f-body);
+    font-size:15px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* film-grain overlay, painted at runtime */
+  .grain{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.035;
+    z-index:60;
+    mix-blend-mode:screen;
+  }
+
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding-inline:20px;
+    padding-block:56px 72px;
+    position:relative;
+    z-index:1;
+  }
+
+  /* ---------- header ---------- */
+  .head{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    padding-bottom:34px;
+    border-bottom:1px solid var(--edge-soft);
+  }
+  .mark{
+    font-family:var(--f-display);
+    font-weight:700;
+    font-size:clamp(52px,13vw,76px);
+    line-height:.9;
+    letter-spacing:.06em;
+    color:var(--text-hi);
+    margin:0;
+    text-shadow:0 0 28px rgba(176,76,247,.55),0 0 68px rgba(139,92,246,.28);
+  }
+  .tagline{
+    margin:0;
+    max-width:52ch;
+    color:var(--text);
+  }
+  .tagline b{color:var(--text-hi);font-weight:500}
+  .engines{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .engine{
+    font-family:var(--f-display);
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    padding:6px 12px;
+    border-radius:3px;
+    border:1px solid currentColor;
+    color:var(--violet);
+  }
+  .engine.grain-e{color:var(--blue)}
+
+  /* ---------- player modules ---------- */
+  .rack{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    margin-block:34px 44px;
+  }
+  .module{
+    --accent:var(--violet);
+    background:linear-gradient(180deg,var(--panel-hi),var(--panel));
+    border:1px solid var(--edge);
+    border-radius:6px;
+    padding:20px;
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:16px 18px;
+    align-items:center;
+    box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 18px 40px -28px rgba(0,0,0,.9);
+  }
+  .module.is-grain{--accent:var(--blue);border-color:rgba(61,90,254,.2)}
+
+  .play{
+    grid-row:1/3;
+    align-self:start;
+    width:60px;
+    height:60px;
+    flex:none;
+    border-radius:50%;
+    border:1px solid var(--accent);
+    background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.10),transparent 62%),#0B1030;
+    color:var(--accent);
+    cursor:pointer;
+    display:grid;
+    place-items:center;
+    transition:box-shadow .22s ease,transform .12s ease;
+    box-shadow:0 0 0 rgba(176,76,247,0);
+  }
+  .module.is-grain .play{box-shadow:0 0 0 rgba(61,90,254,0)}
+  .play:hover,.play:focus-visible{box-shadow:0 0 22px -2px var(--accent)}
+  .play:active{transform:scale(.96)}
+  .play:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .play svg{width:20px;height:20px;fill:currentColor;display:block}
+  .play .ico-pause{display:none}
+  .module.playing .play .ico-play{display:none}
+  .module.playing .play .ico-pause{display:block}
+  .module.playing .play{box-shadow:0 0 26px -2px var(--accent)}
+
+  .meta{min-width:0}
+  .t-name{
+    font-family:var(--f-display);
+    font-weight:600;
+    font-size:18px;
+    letter-spacing:.02em;
+    color:var(--text-hi);
+    margin:0 0 7px;
+  }
+  .readout{
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+    font-family:var(--f-mono);
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-variant-numeric:tabular-nums;
+  }
+  .readout span{
+    border:1px solid var(--edge-soft);
+    border-radius:2px;
+    padding:2px 7px;
+  }
+  .readout .lit{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 34%,transparent)}
+
+  .scrub{
+    grid-column:2;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    min-width:0;
+  }
+  .wave{
+    position:relative;
+    flex:1;
+    min-width:0;
+    height:56px;
+    border-radius:3px;
+    background:rgba(10,14,39,.55);
+    border:1px solid var(--edge-soft);
+    cursor:pointer;
+    overflow:hidden;
+  }
+  .wave:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .wave canvas{display:block;width:100%;height:100%}
+  .wave .head-line{
+    position:absolute;
+    top:0;
+    bottom:0;
+    width:1px;
+    background:var(--accent);
+    box-shadow:0 0 8px var(--accent);
+    left:0;
+    opacity:0;
+    pointer-events:none;
+  }
+  .module.playing .wave .head-line,.module.seeked .wave .head-line{opacity:1}
+  .time{
+    font-family:var(--f-mono);
+    font-size:12px;
+    color:var(--muted);
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+  .time b{color:var(--text-hi);font-weight:500}
+
+  /* ---------- spec strip ---------- */
+  .note{
+    margin:0 0 26px;
+    color:var(--text);
+    max-width:62ch;
+  }
+  .engine-defs{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:16px;
+    margin-bottom:34px;
+  }
+  .def{
+    border-left:2px solid var(--violet);
+    padding:2px 0 2px 14px;
+  }
+  .def.grain-d{border-left-color:var(--blue)}
+  .def h3{
+    font-family:var(--f-display);
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    margin:0 0 5px;
+    color:var(--violet);
+  }
+  .def.grain-d h3{color:var(--blue)}
+  .def p{margin:0;font-size:14px;line-height:1.55}
+
+  .specs{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding-top:26px;
+    border-top:1px solid var(--edge-soft);
+  }
+  .specs li{
+    list-style:none;
+    font-family:var(--f-mono);
+    font-size:11px;
+    letter-spacing:.06em;
+    color:var(--muted);
+    border:1px solid var(--edge-soft);
+    border-radius:2px;
+    padding:4px 9px;
+  }
+  .specs{margin:0;padding-left:0}
+
+  .foot{
+    margin-top:30px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 22px;
+    align-items:baseline;
+  }
+  .foot a{
+    font-family:var(--f-display);
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--violet);
+    text-decoration:none;
+    border-bottom:1px solid color-mix(in srgb,var(--violet) 40%,transparent);
+    padding-bottom:2px;
+  }
+  .foot a:hover,.foot a:focus-visible{color:var(--text-hi);border-bottom-color:var(--text-hi)}
+  .foot p{margin:0;font-size:12px;color:var(--muted);font-family:var(--f-mono)}
+
+  @media (max-width:520px){
+    .wrap{padding-block:40px 56px}
+    .module{grid-template-columns:1fr;gap:14px}
+    .play{grid-row:auto;width:52px;height:52px}
+    .scrub{grid-column:1}
+    .wave{height:46px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+  }
+</style>
+
+<div class="grain" id="grain" aria-hidden="true"></div>
+
+<div class="wrap">
+  <header class="head">
+    <h1 class="mark">PXF</h1>
+    <p class="tagline">Two engines share one master FX chain — ping-pong delay synced to host tempo, reverb, then <b>DUST</b>, the lo-fi character knob that adds tape wow, gentle saturation and vinyl crackle in one turn.</p>
+    <div class="engines">
+      <span class="engine">Synth</span>
+      <span class="engine grain-e">Grain</span>
+      <span class="engine" style="color:var(--muted)">VST3 · AU · Standalone</span>
+    </div>
+  </header>
+
+  <section class="rack" aria-label="Demo tracks">
+    <article class="module" data-src="pxf-beat-140.mp3">
+      <button class="play" type="button" aria-label="Play Demo Beat">
+        <svg class="ico-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        <svg class="ico-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+      </button>
+      <div class="meta">
+        <h2 class="t-name">Demo Beat</h2>
+        <p class="readout">
+          <span class="lit">140 BPM</span>
+          <span>B minor</span>
+          <span>Full arrangement</span>
+        </p>
+      </div>
+      <div class="scrub">
+        <div class="wave" tabindex="0" role="slider" aria-label="Seek Demo Beat" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <canvas></canvas>
+          <div class="head-line"></div>
+        </div>
+        <p class="time"><b class="cur">0:00</b> / <span class="dur">–:––</span></p>
+      </div>
+    </article>
+
+    <article class="module is-grain" data-src="pxf-loop-150.mp3">
+      <button class="play" type="button" aria-label="Play Demo Loop">
+        <svg class="ico-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        <svg class="ico-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+      </button>
+      <div class="meta">
+        <h2 class="t-name">Demo Loop</h2>
+        <p class="readout">
+          <span class="lit">150 BPM</span>
+          <span>B minor</span>
+          <span>Loop</span>
+        </p>
+      </div>
+      <div class="scrub">
+        <div class="wave" tabindex="0" role="slider" aria-label="Seek Demo Loop" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <canvas></canvas>
+          <div class="head-line"></div>
+        </div>
+        <p class="time"><b class="cur">0:00</b> / <span class="dur">–:––</span></p>
+      </div>
+    </article>
+  </section>
+
+  <p class="note">Both tracks were written and rendered with PXF running in FL Studio — no sample libraries, no outboard instruments.</p>
+
+  <div class="engine-defs">
+    <div class="def">
+      <h3>Synth</h3>
+      <p>Two band-limited oscillators plus a sine sub, one low-pass filter, one ADSR. 8-voice poly, or MONO with legato note-sliding and a 0–2000 ms glide. 20 presets compiled in.</p>
+    </div>
+    <div class="def grain-d">
+      <h3>Grain</h3>
+      <p>Drop in any one-shot and play it as streams of overlapping grains, pitched from the keyboard. Grain size 10–500 ms, density to 100/s, spray, ±24 st. C4 plays the sample at original pitch.</p>
+    </div>
+  </div>
+
+  <ul class="specs">
+    <li>JUCE 8 / C++17</li>
+    <li>8-voice polyphonic</li>
+    <li>20 built-in presets</li>
+    <li>920 × 580 fixed UI</li>
+    <li>Stereo out · MIDI in</li>
+    <li>AGPL-3.0</li>
+  </ul>
+
+  <div class="foot">
+    <a href="https://github.com/HenokHabtamu-72/PXF">Source on GitHub</a>
+    <p>Built for FL Studio 21+ on Windows</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---- film grain ---------------------------------------------------- */
+  try{
+    var g=document.createElement("canvas");g.width=g.height=128;
+    var gx=g.getContext("2d"),id=gx.createImageData(128,128),d=id.data;
+    for(var i=0;i<d.length;i+=4){var v=(Math.random()*255)|0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255;}
+    gx.putImageData(id,0,0);
+    document.getElementById("grain").style.backgroundImage="url("+g.toDataURL()+")";
+  }catch(e){/* grain is decoration only */}
+
+  /* ---- helpers ------------------------------------------------------- */
+  function clock(s){
+    if(!isFinite(s)||s<0)return "–:––";
+    var m=Math.floor(s/60),r=Math.floor(s%60);
+    return m+":"+(r<10?"0":"")+r;
+  }
+  function cssVar(el,name){
+    return getComputedStyle(el).getPropertyValue(name).trim();
+  }
+
+  var players=[];
+
+  document.querySelectorAll(".module").forEach(function(mod){
+    var src    = mod.dataset.src,
+        btn    = mod.querySelector(".play"),
+        wave   = mod.querySelector(".wave"),
+        canvas = mod.querySelector("canvas"),
+        headLn = mod.querySelector(".head-line"),
+        curEl  = mod.querySelector(".cur"),
+        durEl  = mod.querySelector(".dur"),
+        name   = mod.querySelector(".t-name").textContent;
+
+    var audio = new Audio();
+    audio.src = src;
+    audio.preload = "metadata";
+
+    var peaks = null;  // Float32Array of normalised bar heights
+
+    /* -- waveform painting -------------------------------------------- */
+    function paint(){
+      var w = wave.clientWidth, h = wave.clientHeight;
+      if(!w || !h) return;
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width  = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      var ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.clearRect(0,0,w,h);
+
+      var accent = cssVar(mod,"--accent") || "#B04CF7";
+      var played = (audio.duration && isFinite(audio.duration))
+        ? (audio.currentTime / audio.duration) : 0;
+
+      var barW = 2, gap = 2, step = barW + gap;
+      var n = Math.max(1, Math.floor(w / step));
+      var mid = h / 2;
+
+      for(var i=0;i<n;i++){
+        var amp;
+        if(peaks){
+          amp = peaks[Math.floor(i / n * peaks.length)] || 0;
+        }else{
+          /* pre-decode resting state: a calm centre line, not an empty box */
+          amp = 0.055;
+        }
+        var bh = Math.max(2, amp * (h - 8));
+        var x  = i * step;
+        ctx.fillStyle = (x / w) <= played ? accent : "rgba(201,196,232,.22)";
+        ctx.fillRect(x, mid - bh/2, barW, bh);
+      }
+    }
+
+    /* -- decode for real peaks ---------------------------------------- */
+    function analyse(){
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      fetch(src).then(function(r){ return r.arrayBuffer(); }).then(function(buf){
+        var ac = new AC();
+        return new Promise(function(res,rej){
+          var p = ac.decodeAudioData(buf, res, rej);
+          if(p && p.then) p.then(res, rej);
+        }).then(function(audioBuf){
+          try{ ac.close(); }catch(e){}
+          var ch = audioBuf.getChannelData(0);
+          var N  = 900;
+          var block = Math.floor(ch.length / N) || 1;
+          var out = new Float32Array(N), max = 0;
+          for(var i=0;i<N;i++){
+            var s=0, start=i*block, end=Math.min(start+block, ch.length);
+            for(var j=start;j<end;j++){ var a=ch[j]; if(a<0)a=-a; if(a>s)s=a; }
+            out[i]=s; if(s>max)max=s;
+          }
+          if(max>0) for(var k=0;k<N;k++) out[k]=out[k]/max;
+          peaks = out;
+          paint();
+        });
+      }).catch(function(){ /* keep the resting line */ });
+    }
+
+    /* -- transport ----------------------------------------------------- */
+    function stopOthers(){
+      players.forEach(function(p){ if(p.audio !== audio) p.pause(); });
+    }
+    function pause(){
+      audio.pause();
+      mod.classList.remove("playing");
+      btn.setAttribute("aria-label","Play "+name);
+    }
+    function toggle(){
+      if(audio.paused){
+        stopOthers();
+        audio.play().then(function(){
+          mod.classList.add("playing");
+          btn.setAttribute("aria-label","Pause "+name);
+        }).catch(function(){});
+      }else{
+        pause();
+      }
+    }
+
+    function tick(){
+      var d = audio.duration;
+      curEl.textContent = clock(audio.currentTime);
+      if(d && isFinite(d)){
+        var pct = audio.currentTime / d;
+        headLn.style.left = (pct * 100) + "%";
+        wave.setAttribute("aria-valuenow", Math.round(pct * 100));
+      }
+      paint();
+    }
+
+    function seekTo(ratio){
+      var d = audio.duration;
+      if(!d || !isFinite(d)) return;
+      audio.currentTime = Math.max(0, Math.min(1, ratio)) * d;
+      mod.classList.add("seeked");
+      tick();
+    }
+
+    btn.addEventListener("click", toggle);
+    audio.addEventListener("timeupdate", tick);
+    audio.addEventListener("loadedmetadata", function(){
+      durEl.textContent = clock(audio.duration);
+      paint();
+    });
+    audio.addEventListener("ended", function(){
+      pause();
+      audio.currentTime = 0;
+      tick();
+    });
+
+    wave.addEventListener("click", function(ev){
+      var r = wave.getBoundingClientRect();
+      seekTo((ev.clientX - r.left) / r.width);
+    });
+    wave.addEventListener("keydown", function(ev){
+      var d = audio.duration;
+      if(!d || !isFinite(d)) return;
+      if(ev.key === "ArrowRight"){ seekTo((audio.currentTime + 5) / d); ev.preventDefault(); }
+      else if(ev.key === "ArrowLeft"){ seekTo((audio.currentTime - 5) / d); ev.preventDefault(); }
+      else if(ev.key === " " || ev.key === "Enter"){ toggle(); ev.preventDefault(); }
+    });
+
+    players.push({ audio: audio, pause: pause, paint: paint });
+    paint();
+    analyse();
+  });
+
+  var rt;
+  window.addEventListener("resize", function(){
+    clearTimeout(rt);
+    rt = setTimeout(function(){ players.forEach(function(p){ p.paint(); }); }, 120);
+  });
+})();
+</script>
