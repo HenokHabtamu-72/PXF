@@ -1,0 +1,57 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Windows, os: windows-latest }
+          - { name: macOS,   os: macos-latest }
+          - { name: Linux,   os: ubuntu-latest }
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libasound2-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev \
+            libxinerama-dev libxcomposite-dev libfreetype-dev libfontconfig1-dev \
+            libgl1-mesa-dev
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPXF_BUILD_TESTS=ON
+
+      - name: Build plugin and tests
+        run: cmake --build build --config Release --target PXF_VST3 pxf_tests --parallel
+
+      - name: Run engine tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Upload VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: PXF-VST3-${{ matrix.name }}
+          path: build/PXF_artefacts/Release/VST3/
+          if-no-files-found: error
+          retention-days: 14

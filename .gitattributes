@@ -1,0 +1,26 @@
+# Normalise line endings on the way in; check out native.
+* text=auto
+
+*.c      text diff=cpp
+*.cpp    text diff=cpp
+*.h      text diff=cpp
+*.hpp    text diff=cpp
+*.cmake  text
+*.txt    text
+*.md     text diff=markdown
+*.json   text
+*.yml    text
+*.yaml   text
+
+# Never touch binaries.
+*.wav    binary
+*.aiff   binary
+*.aif    binary
+*.flac   binary
+*.mp3    binary
+*.ogg    binary
+*.png    binary
+*.jpg    binary
+*.gif    binary
+*.pdf    binary
+*.vst3   binary
