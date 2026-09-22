@@ -40,7 +40,8 @@ namespace pxf
         void paintHeader (juce::Graphics&);
         juce::Image makeGrainImage() const;
 
-        PxfAudioProcessor& processor;
+        // Not just 'processor': AudioProcessorEditor already has a member by that name.
+        PxfAudioProcessor& pxfProcessor;
 
         // Declared first so they outlive every component that borrows them.
         PxfLookAndFeel purpleLnf { theme::purple };

@@ -19,7 +19,7 @@ namespace pxf
 
     //==============================================================================
     PxfAudioProcessorEditor::PxfAudioProcessorEditor (PxfAudioProcessor& p)
-        : juce::AudioProcessorEditor (&p), processor (p)
+        : juce::AudioProcessorEditor (&p), pxfProcessor (p)
     {
         setLookAndFeel (&purpleLnf);
 
@@ -34,8 +34,8 @@ namespace pxf
         synthTabButton.onClick = [this] { showTab (synthTab); };
         grainTabButton.onClick = [this] { showTab (grainTab); };
 
-        prevPreset.onClick = [this] { processor.stepPreset (-1); refreshPresetLabel(); };
-        nextPreset.onClick = [this] { processor.stepPreset ( 1); refreshPresetLabel(); };
+        prevPreset.onClick = [this] { pxfProcessor.stepPreset (-1); refreshPresetLabel(); };
+        nextPreset.onClick = [this] { pxfProcessor.stepPreset ( 1); refreshPresetLabel(); };
 
         addAndMakeVisible (synthPanel);
         addAndMakeVisible (grainPanel);
@@ -47,7 +47,7 @@ namespace pxf
         buildGrainPanel();
         buildFxStrip();
 
-        showTab (processor.getActiveTab());
+        showTab (pxfProcessor.getActiveTab());
         refreshSample();
         syncMonoLegato();
 
@@ -132,7 +132,7 @@ namespace pxf
         theme::drawTracked (g, "PXF", mark, 5.0f, juce::Justification::centredLeft, theme::font (26.0f, true));
 
         // ---- preset browser ----
-        const auto& preset = presets[processor.getPresetIndex()];
+        const auto& preset = presets[pxfProcessor.getPresetIndex()];
 
         auto category = presetNameArea.withHeight (14).withY (presetNameArea.getY() + 8);
         auto name     = presetNameArea.withTrimmedTop (20);
@@ -154,7 +154,7 @@ namespace pxf
         synthPanel.addAndMakeVisible (ampCard);
         synthPanel.addAndMakeVisible (voiceCard);
 
-        auto& state = processor.apvts;
+        auto& state = pxfProcessor.apvts;
 
         // ---- oscillators ----
         osc1Box.addItemList (waveNames(), 1);
@@ -233,7 +233,7 @@ namespace pxf
         grainPanel.addAndMakeVisible (sampleCard);
         grainPanel.addAndMakeVisible (grainCard);
 
-        auto& state = processor.apvts;
+        auto& state = pxfProcessor.apvts;
 
         loadButton.setButtonText ("LOAD");
         loadButton.setColour (juce::TextButton::buttonColourId,   theme::knobBody);
@@ -251,7 +251,7 @@ namespace pxf
 
         waveform.onPositionDragged = [this] (float x)
         {
-            if (auto* param = processor.apvts.getParameter (pid::grainPosition))
+            if (auto* param = pxfProcessor.apvts.getParameter (pid::grainPosition))
                 param->setValueNotifyingHost (juce::jlimit (0.0f, 1.0f, x));
         };
 
@@ -284,7 +284,7 @@ namespace pxf
         fxStrip.addAndMakeVisible (dustCard);
         fxStrip.addAndMakeVisible (masterCard);
 
-        auto& state = processor.apvts;
+        auto& state = pxfProcessor.apvts;
 
         revSizeKnob = std::make_unique<KnobCell> (state, pid::revSize, "Size", [] (double v) { return formatPercent (v); });
         revMixKnob  = std::make_unique<KnobCell> (state, pid::revMix,  "Mix",  [] (double v) { return formatPercent (v); });
@@ -488,7 +488,7 @@ namespace pxf
     //==============================================================================
     void PxfAudioProcessorEditor::showTab (int tab)
     {
-        processor.setActiveTab (tab);
+        pxfProcessor.setActiveTab (tab);
 
         synthPanel.setVisible (tab == synthTab);
         grainPanel.setVisible (tab == grainTab);
@@ -517,7 +517,7 @@ namespace pxf
                 menu.addSectionHeader (currentCategory);
             }
 
-            menu.addItem (i + 1, preset.name, true, i == processor.getPresetIndex());
+            menu.addItem (i + 1, preset.name, true, i == pxfProcessor.getPresetIndex());
         }
 
         menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this)
@@ -526,7 +526,7 @@ namespace pxf
                             {
                                 if (result > 0)
                                 {
-                                    processor.loadPreset (result - 1);
+                                    pxfProcessor.loadPreset (result - 1);
                                     refreshPresetLabel();
                                 }
                             });
@@ -566,7 +566,7 @@ namespace pxf
     {
         juce::String error;
 
-        if (! processor.loadSample (file, error))
+        if (! pxfProcessor.loadSample (file, error))
         {
             waveform.setPlaceholder (error.toUpperCase());
             return;
@@ -577,15 +577,15 @@ namespace pxf
 
     void PxfAudioProcessorEditor::refreshSample()
     {
-        lastSampleVersion = processor.grain.getVersion();
+        lastSampleVersion = pxfProcessor.grain.getVersion();
 
-        if (processor.grain.hasSample())
+        if (pxfProcessor.grain.hasSample())
         {
             std::vector<float> mins, maxs;
-            processor.grain.getPeaks (mins, maxs);
+            pxfProcessor.grain.getPeaks (mins, maxs);
             waveform.setPeaks (std::move (mins), std::move (maxs));
 
-            fileLabel.setText (processor.grain.getFileName(), juce::dontSendNotification);
+            fileLabel.setText (pxfProcessor.grain.getFileName(), juce::dontSendNotification);
         }
         else
         {
@@ -599,29 +599,29 @@ namespace pxf
     void PxfAudioProcessorEditor::timerCallback()
     {
         // Header follows the host: presets can change from automation too.
-        if (shownPresetIndex != processor.getPresetIndex())
+        if (shownPresetIndex != pxfProcessor.getPresetIndex())
         {
-            shownPresetIndex = processor.getPresetIndex();
+            shownPresetIndex = pxfProcessor.getPresetIndex();
             repaint (getLocalBounds().removeFromTop (kHeaderH));
         }
 
         if (monoButton.getToggleState() != legatoButton.isEnabled())
             syncMonoLegato();
 
-        if (processor.getActiveTab() != (synthPanel.isVisible() ? synthTab : grainTab))
-            showTab (processor.getActiveTab());
+        if (pxfProcessor.getActiveTab() != (synthPanel.isVisible() ? synthTab : grainTab))
+            showTab (pxfProcessor.getActiveTab());
 
         if (! grainPanel.isVisible())
             return;
 
-        if (lastSampleVersion != processor.grain.getVersion())
+        if (lastSampleVersion != pxfProcessor.grain.getVersion())
             refreshSample();
 
-        if (auto* param = processor.apvts.getRawParameterValue (pid::grainPosition))
+        if (auto* param = pxfProcessor.apvts.getRawParameterValue (pid::grainPosition))
             waveform.setPosition (param->load() * 0.01f);
 
         float positions[GrainEngine::kVizSlots];
-        const int count = processor.grain.getVizPositions (positions, GrainEngine::kVizSlots);
+        const int count = pxfProcessor.grain.getVizPositions (positions, GrainEngine::kVizSlots);
 
         waveform.setGrainDots (std::vector<float> (positions, positions + count));
     }
